@@ -1,0 +1,51 @@
+service: cat-dynamodb-table
+frameworkVersion: '2'
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  tableName: ${self:provider.stage}-cats
+
+provider:
+  name: aws
+  stage: dev
+  region: us-east-1
+
+resources:
+  Resources:
+    DynamoDbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+        TableName: cat-table-${self:provider.stage}
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+  Outputs:
+    DynamoDbTable:
+      Value:
+        "Ref": DynamoDbTable
+      Export:
+        Name: cat-table-${self:provider.stage}
+
+
+#Resources:
+#  CatTable:
+#    Type: AWS::DynamoDB::Table
+#    DeletionPolicy: Retain
+#    Properties:
+#      ProvisionedThroughput:
+#        ReadCapacityUnits: 1
+#        WriteCapacityUnits: 1
+#      TableName: ${self:custom.tableName}
+#      AttributeDefinitions:
+#        - AttributeName: id
+#          AttributeType: S
+#      KeySchema:
+#        - AttributeName: id
+#          KeyType: HASH

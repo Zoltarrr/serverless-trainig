@@ -1,0 +1,40 @@
+service: s3-cat-file
+frameworkVersion: "2"
+
+custom:
+  bucket: god-goods-cat-bucket
+
+provider:
+  name: aws
+  runtime: python3.8
+  stage: dev
+  size: 128
+  region: us-east-1
+  environment:
+    QUEUE_URL:
+      "Fn::ImportValue": "cat-queue-${self:provider.stage}"
+    REGION: ${self:provider.region}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "s3:GetObject"
+      Resource: "arn:aws:s3:::${self:custom.bucket}/*"
+    - Effect: Allow
+      Action: [
+          "sqs:SendMessage",
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:DeleteMessageBatch",
+          "sqs:GetQueueUrl"
+      ]
+      Resource: "arn:aws:sqs:*:*:cat-queue-${self:provider.stage}"
+
+functions:
+  process-s3-to-sqs:
+    handler: src/handler.lambda_handler
+    events:
+      - s3:
+          bucket: ${self:custom.bucket}
+          event: s3:ObjectCreated:*
+          rules:
+            - suffix: .csv

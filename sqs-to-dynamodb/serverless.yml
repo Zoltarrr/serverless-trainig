@@ -1,0 +1,33 @@
+service: sqs-to-dynamodb
+frameworkVersion: "2"
+
+custom:
+  sqs_arn: arn:aws:sqs:${opt:region, self:provider.region}:176106732758:cat-queue-${self:provider.stage}
+
+provider:
+  name: aws
+  runtime: python3.8
+  stage: dev
+  size: 128
+  region: us-east-1
+  environment:
+    catTableName:
+      "Fn::ImportValue": "cat-table-${self:provider.stage}"
+    REGION: ${self:provider.region}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "dynamodb:BatchWriteItem"
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/cat-table-${self:provider.stage}"
+    - Effect: Allow
+      Action:
+        - "sqs:*"
+      Resource: "arn:aws:sqs:${opt:region, self:provider.region}:*:cat-queue-${self:provider.stage}"
+
+functions:
+  process-sqs-msg:
+    handler: src/handler.lambda_handler
+    events:
+      - sqs:
+          arn: ${self:custom.sqs_arn}
+          batchSize: 1

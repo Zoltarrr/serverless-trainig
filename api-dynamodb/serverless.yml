@@ -1,0 +1,50 @@
+service: api-dynamodb
+frameworkVersion: '2'
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  tableName: ${self:provider.stage}-cats
+
+provider:
+  name: aws
+  runtime: python3.8
+  stage: dev
+  size: 128
+  region: us-east-1
+  environment:
+    catTableName:
+      "Fn::ImportValue": "cat-table-${self:provider.stage}"
+
+  iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+          - dynamodb:Scan
+          - dynamodb:GetItem
+          - dynamodb:PutItem
+          - dynamodb:UpdateItem
+          - dynamodb:DeleteItem
+        Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/cat-table-${self:provider.stage}"
+
+functions:
+  getCat:
+    handler: src/handlers/get.get
+    events:
+      - http:
+          path: cat/{id}
+          method: get
+          cors: true
+  getCats:
+    handler: src/handlers/list.get
+    events:
+      - http:
+          path: cats
+          method: get
+          cors: true
+  createCat:
+    handler: src/handlers/create.create
+    events:
+      - http:
+          path: cat
+          method: post
+          cors: true

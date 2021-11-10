@@ -1,0 +1,20 @@
+service: serverless-cat-sqs-queue
+frameworkVersion: "2"
+
+provider:
+  name: aws
+  stage: dev
+  region: us-east-1
+
+resources:
+  Resources:
+    S3CatQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "cat-queue-${self:provider.stage}"
+  Outputs:
+    S3CatQueue:
+      Value:
+        "Ref": S3CatQueue
+      Export:
+        Name: "cat-queue-${self:provider.stage}"
